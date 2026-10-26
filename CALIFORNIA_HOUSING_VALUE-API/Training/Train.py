@@ -42,7 +42,7 @@ def score(y_true, y_pred):
 
 
 def main():
-    dataset_path = Path(kagglehub.dataset_download(DATASET_NAME))
+    dataset_path = Path(kagglehub.dataset_download("camnugent/california-housing-prices"))
     data = pd.read_csv(dataset_path / "housing.csv")
 
     if "median_house_value" not in data.columns:
@@ -55,13 +55,13 @@ def main():
         X,
         y,
         test_size=0.2,
-        random_state=RANDOM_STATE,
+        random_state=42,
     )
 
     # Use balanced sample weights for the least common target price bands.
     train_price_bands = pd.cut(
         y_train,
-        bins=N_PRICE_BANDS,
+        bins=5,
         labels=False,
         include_lowest=True,
     )
@@ -109,7 +109,7 @@ def main():
             max_depth=20,
             min_samples_split=10,
             min_samples_leaf=5,
-            random_state=RANDOM_STATE,
+            random_state=42,
             n_jobs=-1,
         ),
         "Gradient Boosting Regressor": GradientBoostingRegressor(
@@ -118,7 +118,7 @@ def main():
             max_depth=2,
             min_samples_leaf=5,
             subsample=0.8,
-            random_state=RANDOM_STATE,
+            random_state=42,
         ),
         "MLP Neural Network Regressor": MLPRegressor(
             hidden_layer_sizes=(32, 16),
@@ -130,7 +130,7 @@ def main():
             early_stopping=True,
             validation_fraction=0.15,
             n_iter_no_change=20,
-            random_state=RANDOM_STATE,
+            random_state=42,
         ),
     }
 
@@ -153,7 +153,7 @@ def main():
 
         with mlflow.start_run(run_name=model_name):
             mlflow.set_tag("algorithm", model_name)
-            mlflow.log_param("target_price_bands", N_PRICE_BANDS)
+            mlflow.log_param("target_price_bands", 5)
             mlflow.log_param("uses_sample_weight", accepts_sample_weight)
 
             if accepts_sample_weight:
