@@ -1,0 +1,70 @@
+
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command:
+      - uvicorn
+      - App.main:app
+      - --host
+      - 0.0.0.0
+      - --port
+      - "8800"
+    environment:
+      HOUSING_MODEL_PATH: /app/models/housing_models.joblib
+    ports:
+      - "8200:8800"
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8800/health', timeout=3)"
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  streamlit:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command:
+      - streamlit
+      - run
+      - streamlit/app.py
+      - --server.address=0.0.0.0
+      - --server.port=8300
+      - --server.headless=true
+    environment:
+      HOUSING_API_URL: http://api:8800
+    ports:
+      - "8300:8300"
+    depends_on:
+      api:
+        condition: service_healthy
+
+  mlflow:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command:
+      - mlflow
+      - server
+      - --host
+      - 0.0.0.0
+      - --port
+      - "8100"
+      - --backend-store-uri
+      - sqlite:////mlflow/mlflow.db
+      - --artifacts-destination
+      - /mlflow/artifacts
+    ports:
+      - "8100:8100"
+    volumes:
+      - mlflow-data:/mlflow
+
+volumes:
+  mlflow-data:
+s
